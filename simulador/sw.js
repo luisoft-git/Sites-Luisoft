@@ -1,5 +1,5 @@
-const CACHE = "luisoft-v2";
-const FILES = ["./", "./index.html", "./questions.js", "./questions-b.js", "./manifest.json", "./icon.svg"];
+const CACHE = "luisoft-v3";
+const FILES = ["./", "./index.html", "./questions.js", "./questions-b.js", "./questions-c.js", "./manifest.json", "./icon.svg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
