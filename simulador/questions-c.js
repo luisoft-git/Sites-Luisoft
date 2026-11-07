@@ -99,7 +99,6 @@
   { t: "Ministério do Interior", q: "Qual é o principal dever de um polícia para com a população?", o: ["Proteger os cidadãos e respeitar os seus direitos", "Impor a sua vontade", "Exigir suborno", "Ignorar as queixas"], a: 0 },
   { t: "Ministério do Interior", q: "Qual é a importância da formação profissional nos serviços do Ministério do Interior?", o: ["Garantir competência, ética e respeito pela lei no serviço", "Aumentar a burocracia", "Eliminar o controlo", "Substituir a lei"], a: 0 },
   { t: "Ministério do Interior", q: "O que significa o termo 'ordem pública'?", o: ["Situação de tranquilidade e respeito pelas normas na sociedade", "Ordem de um tribunal", "Desfile militar", "Documento de identificação"], a: 0 },
-  { t: "Ministério do Interior", q: "Qual é a função da Polícia de Fronteiras?", o: ["Vigiar as fronteiras e controlar a entrada e saída do território", "Vigiar o trânsito urbano", "Organizar eleições", "Gerir hospitais"], a: 0 },
   { t: "Ministério do Interior", q: "Quem tutela a Polícia Nacional de Angola?", o: ["O Ministério do Interior", "O Ministério da Saúde", "O Ministério da Educação", "O Ministério da Agricultura"], a: 0 },
   { t: "Ministério do Interior", q: "Qual é a principal finalidade dos serviços de identificação civil?", o: ["Registar e identificar os cidadãos", "Cobrar impostos", "Organizar concursos", "Fiscalizar empresas"], a: 0 },
 
