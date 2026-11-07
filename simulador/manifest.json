@@ -1,0 +1,14 @@
+{
+  "name": "Luisoft Simulador",
+  "short_name": "Luisoft",
+  "description": "Simulador da prova escrita do Ministério do Interior de Angola",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b1d33",
+  "theme_color": "#0b1d33",
+  "orientation": "portrait",
+  "lang": "pt-AO",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
