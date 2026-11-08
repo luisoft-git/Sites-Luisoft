@@ -89,7 +89,9 @@
   <div class="card" style="text-align:center">
     <div>Candidato</div>
     <h2 id="rName" style="margin:4px 0 0"></h2>
-    <div class="big" id="rPct"></div>
+    <div class="big" id="rNota"></div>
+    <div style="color:var(--mut)">nota do simulado (escala de 0 a 20)</div>
+    <div style="margin-top:12px;font-size:20px;font-weight:700" id="rPct"></div>
     <div style="color:var(--mut)">percentagem de respostas certas</div>
     <div class="stats">
       <div><strong id="rOk" style="color:var(--ok)"></strong><span>Certas</span></div>
@@ -107,11 +109,13 @@
   <div class="card" id="reviewBox" style="display:none"></div>
 </section>
 
-<footer>Luisoft Simulador · v1.0</footer>
+<footer>Luisoft Simulador · v1.1</footer>
 
 <script src="questions.js"></script>
 <script src="questions-b.js"></script>
 <script src="questions-c.js"></script>
+<script src="questions-d.js"></script>
+<script src="questions-e.js"></script>
 <script>
 (function () {
   const SIM_SIZE = 50;
@@ -150,7 +154,7 @@
     const box = $("history");
     if (!h.length) { box.innerHTML = '<p style="color:var(--mut);font-size:14px">Ainda não há simulados.</p>'; return; }
     box.innerHTML = h.slice(-10).reverse().map(r =>
-      `<div class="history-item"><b>${escapeHtml(r.nome)}</b> — ${r.pct}% (${r.ok}/${r.total}) · ${r.data}</div>`
+      `<div class="history-item"><b>${escapeHtml(r.nome)}</b> — nota ${r.nota != null ? String(r.nota).replace(".", ",") + "/20" : ""} · ${r.pct}% (${r.ok}/${r.total}) · ${r.data}</div>`
     ).join("");
   }
 
@@ -226,14 +230,16 @@
     const total = sim.items.length;
     const ok = sim.answers.filter(a => a && a.correct).length;
     const pct = Math.round(ok / total * 100);
+    const nota = Math.round(ok / total * 200) / 10; // escala de 0 a 20, uma casa decimal
     const data = new Date().toLocaleString("pt-PT");
 
     const h = loadHistory();
-    h.push({ nome: sim.nome, pct, ok, total, data });
+    h.push({ nome: sim.nome, pct, nota, ok, total, data });
     saveHistory(h);
 
     $("rName").textContent = sim.nome;
-    $("rPct").textContent = pct + "%";
+    $("rNota").textContent = nota.toFixed(1).replace(".", ",") + " / 20";
+    $("rPct").textContent = pct + "% de respostas certas";
     $("rOk").textContent = ok;
     $("rBad").textContent = total - ok;
     $("rTot").textContent = total;
