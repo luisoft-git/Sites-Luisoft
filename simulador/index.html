@@ -46,6 +46,8 @@
   .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
   .row:last-child { border-bottom:none; }
   .warn { color:#ffb4a8; font-size:14px; }
+  .timer { font-weight:700; color:var(--gold); font-variant-numeric:tabular-nums; }
+  .timer.low { color:var(--bad); }
   .history-item { font-size:14px; padding:8px 0; border-bottom:1px solid var(--line); }
   footer { text-align:center; color:var(--mut); font-size:12px; padding:20px 0; }
 </style>
@@ -74,7 +76,7 @@
 <!-- ECRÃ 2: prova -->
 <section id="screen-quiz" class="screen">
   <div class="card">
-    <div class="meta"><span id="qCount"></span><span id="qScore"></span></div>
+    <div class="meta"><span id="qCount"></span><span id="qTimer" class="timer">1:00</span><span id="qScore"></span></div>
     <div class="bar"><div id="qBar"></div></div>
     <span class="topic" id="qTopic"></span>
     <div class="question" id="qText"></div>
@@ -109,18 +111,58 @@
   <div class="card" id="reviewBox" style="display:none"></div>
 </section>
 
-<footer>Luisoft Simulador · v1.1</footer>
+<footer>Luisoft Simulador · v1.2</footer>
 
 <script src="questions.js"></script>
 <script src="questions-b.js"></script>
 <script src="questions-c.js"></script>
 <script src="questions-d.js"></script>
 <script src="questions-e.js"></script>
+<script src="questions-f.js"></script>
 <script>
 (function () {
   const SIM_SIZE = 50;
   const PASS = 50; // percentagem mínima de aprovação (ajustável)
   const KEY = "luisoft_historico_v1";
+  const TEMPO = 60; // segundos por pergunta
+
+  let timerId = null;
+  let restante = TEMPO;
+  function pararTempo() { if (timerId) { clearInterval(timerId); timerId = null; } }
+  function mostrarTempo() {
+    const m = Math.floor(restante / 60), s = String(restante % 60).padStart(2, "0");
+    const el = $("qTimer");
+    el.textContent = `${m}:${s}`;
+    el.classList.toggle("low", restante <= 10);
+  }
+  function iniciarTempo() {
+    pararTempo();
+    restante = TEMPO;
+    mostrarTempo();
+    timerId = setInterval(() => {
+      restante--;
+      mostrarTempo();
+      if (restante <= 0) tempoEsgotado();
+    }, 1000);
+  }
+  function tempoEsgotado() {
+    pararTempo();
+    if (!sim || sim.answers[sim.i]) return;
+    const item = sim.items[sim.i];
+    sim.answers[sim.i] = { topic: item.t, correct: false, chosen: -1 };
+    mostrarResposta(item, -1);
+    $("qExplain").textContent = "Tempo esgotado. " + (item.e ? "Nota: " + item.e : "");
+    $("qScore").textContent = `Certas: ${sim.answers.filter(a => a && a.correct).length}`;
+    $("btnNext").disabled = false;
+  }
+  function mostrarResposta(item, escolhida) {
+    const opts = $("qOpts").children;
+    for (let j = 0; j < opts.length; j++) {
+      opts[j].classList.add("disabled");
+      if (j === item.a) opts[j].classList.add("correct");
+      if (j === escolhida && escolhida !== item.a) opts[j].classList.add("wrong");
+    }
+  }
 
   const $ = id => document.getElementById(id);
   const screens = { start: $("screen-start"), quiz: $("screen-quiz"), result: $("screen-result") };
@@ -203,19 +245,16 @@
     });
     $("btnNext").disabled = true;
     $("btnNext").textContent = sim.i === n - 1 ? "Ver resultado" : "Próxima";
+    iniciarTempo();
   }
 
   function answer(k) {
     const item = sim.items[sim.i];
     if (sim.answers[sim.i]) return; // já respondida
+    pararTempo();
     const correct = k === item.a;
     sim.answers[sim.i] = { topic: item.t, correct, chosen: k };
-    const opts = $("qOpts").children;
-    for (let j = 0; j < opts.length; j++) {
-      opts[j].classList.add("disabled");
-      if (j === item.a) opts[j].classList.add("correct");
-      if (j === k && !correct) opts[j].classList.add("wrong");
-    }
+    mostrarResposta(item, k);
     if (item.e) $("qExplain").textContent = "Nota: " + item.e;
     $("qScore").textContent = `Certas: ${sim.answers.filter(a => a && a.correct).length}`;
     $("btnNext").disabled = false;
@@ -227,6 +266,7 @@
   });
 
   function finish() {
+    pararTempo();
     const total = sim.items.length;
     const ok = sim.answers.filter(a => a && a.correct).length;
     const pct = Math.round(ok / total * 100);
@@ -265,7 +305,7 @@
     $("reviewBox").innerHTML = sim.items.map((it, idx) => {
       const a = sim.answers[idx];
       const good = a && a.correct;
-      const resp = a ? it.o[a.chosen] : "(sem resposta)";
+      const resp = a && a.chosen >= 0 ? it.o[a.chosen] : "(sem resposta: tempo esgotado)";
       return `<div class="history-item"><b>${idx + 1}. ${escapeHtml(it.q)}</b><br>
         <span style="color:${good ? "var(--ok)" : "var(--bad)"}">Respondeu: ${escapeHtml(resp)}</span>
         ${good ? "" : `<br><span style="color:var(--ok)">Correta: ${escapeHtml(it.o[it.a])}</span>`}</div>`;
@@ -279,6 +319,7 @@
     b.style.display = b.style.display === "none" ? "block" : "none";
   });
   $("btnNew").addEventListener("click", () => {
+    pararTempo();
     sim = null;
     $("candName").value = "";
     renderHistory();

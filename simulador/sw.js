@@ -1,7 +1,7 @@
-const CACHE = "luisoft-v4";
+const CACHE = "luisoft-v5";
 const FILES = [
   "./", "./index.html", "./questions.js", "./questions-b.js", "./questions-c.js",
-  "./questions-d.js", "./questions-e.js", "./manifest.json", "./icon.svg"
+  "./questions-d.js", "./questions-e.js", "./questions-f.js", "./manifest.json", "./icon.svg"
 ];
 
 self.addEventListener("install", e => {
