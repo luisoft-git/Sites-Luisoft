@@ -1,4 +1,4 @@
-const CACHE = "luisoft-v8";
+const CACHE = "luisoft-v9";
 const FILES = [
   "./", "./index.html", "./questions.js", "./questions-b.js", "./questions-c.js",
   "./questions-d.js", "./questions-e.js", "./questions-f.js", "./questions-g.js",

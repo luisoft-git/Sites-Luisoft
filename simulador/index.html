@@ -48,6 +48,8 @@
   .warn { color:#ffb4a8; font-size:14px; }
   .timer { font-weight:700; color:var(--gold); font-variant-numeric:tabular-nums; }
   .timer.low { color:var(--bad); }
+  .mini { width:auto; margin:6px 0 0; padding:6px 12px; font-size:13px; background:transparent; color:var(--bad); border:1px solid var(--bad); }
+  .mini.all { width:100%; margin-top:12px; }
   .history-item { font-size:14px; padding:8px 0; border-bottom:1px solid var(--line); }
   footer { text-align:center; color:var(--mut); font-size:12px; padding:20px 0; }
 </style>
@@ -104,6 +106,12 @@
     <p id="rVerdict" style="margin-top:14px"></p>
   </div>
   <div class="card">
+    <label>Partilhar resultado</label>
+    <button id="btnWa">Partilhar no WhatsApp</button>
+    <button class="secondary" id="btnFb">Partilhar no Facebook</button>
+    <p id="shareMsg" style="color:var(--mut);font-size:13px;margin:8px 0 0"></p>
+  </div>
+  <div class="card">
     <label>Desempenho por tópico</label>
     <div id="rTopics"></div>
   </div>
@@ -112,7 +120,7 @@
   <div class="card" id="reviewBox" style="display:none"></div>
 </section>
 
-<footer>Luisoft Simulador · v1.3<br>Criado por Luisoft Solutions · Desenvolvedor: Luís Manuel Gabriel</footer>
+<footer>Luisoft Simulador · v1.4<br>Criado por Luisoft Solutions · Desenvolvedor: Luís Manuel Gabriel</footer>
 
 <script src="questions.js"></script>
 <script src="questions-b.js"></script>
@@ -130,6 +138,8 @@
   const SIM_SIZE = 50;
   const PASS = 50; // percentagem mínima de aprovação (ajustável)
   const KEY = "luisoft_historico_v1";
+  const APP_URL = "https://luisoft-git.github.io/Sites-Luisoft/simulador/";
+  let ultimo = null; // último resultado, para partilha
   const TEMPO = 60; // segundos por pergunta
 
   let timerId = null;
@@ -201,9 +211,10 @@
     const h = loadHistory();
     const box = $("history");
     if (!h.length) { box.innerHTML = '<p style="color:var(--mut);font-size:14px">Ainda não há simulados.</p>'; return; }
-    box.innerHTML = h.slice(-10).reverse().map(r =>
-      `<div class="history-item"><b>${escapeHtml(r.nome)}</b> — nota ${r.nota != null ? String(r.nota).replace(".", ",") + "/20" : ""} · ${r.pct}% (${r.ok}/${r.total}) · ${r.data}</div>`
-    ).join("");
+    box.innerHTML = h.map((r, i) => ({ r, i })).reverse().map(({ r, i }) =>
+      `<div class="history-item"><b>${escapeHtml(r.nome)}</b> — nota ${r.nota != null ? String(r.nota).replace(".", ",") + "/20" : ""} · ${r.pct}% (${r.ok}/${r.total}) · ${r.data}<br>
+        <button class="mini" data-del="${i}">Eliminar</button></div>`
+    ).join("") + `<button class="mini all" id="btnLimparHist">Apagar todo o histórico</button>`;
   }
 
   function escapeHtml(s) {
@@ -303,6 +314,8 @@
     const h = loadHistory();
     h.push({ nome: sim.nome, pct, nota, ok, total, data });
     saveHistory(h);
+    ultimo = { nome: sim.nome, nota, pct, ok, total, aprovado: pct >= PASS };
+    $("shareMsg").textContent = "";
 
     $("rName").textContent = sim.nome;
     $("rNota").textContent = nota.toFixed(1).replace(".", ",") + " / 20";
@@ -340,6 +353,47 @@
 
     show("result");
   }
+
+  // ----- Partilha -----
+  function textoPartilha(r) {
+    const nota = String(r.nota).replace(".", ",");
+    return `Luisoft Simulador\n${r.nome}: nota ${nota}/20 (${r.ok}/${r.total} respostas certas, ${r.pct}%).\n` +
+      (r.aprovado ? "Aprovado no simulado." : "Não atingiu a percentagem mínima.") + `\n${APP_URL}`;
+  }
+  $("btnWa").addEventListener("click", () => {
+    if (!ultimo) return;
+    window.open("https://wa.me/?text=" + encodeURIComponent(textoPartilha(ultimo)), "_blank");
+  });
+  $("btnFb").addEventListener("click", () => {
+    if (!ultimo) return;
+    const texto = textoPartilha(ultimo);
+    let copiado = false;
+    try {
+      if (navigator.clipboard) { navigator.clipboard.writeText(texto); copiado = true; }
+    } catch (e) {}
+    window.open("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(APP_URL) +
+      "&quote=" + encodeURIComponent(texto), "_blank");
+    $("shareMsg").textContent = copiado
+      ? "Resultado copiado. Se o Facebook não mostrar o texto, cole-o na sua publicação."
+      : "Abriu o Facebook. Copie e cole o resultado na sua publicação.";
+  });
+
+  // ----- Eliminar do histórico -----
+  $("history").addEventListener("click", e => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.dataset.del !== undefined) {
+      if (!confirm("Eliminar este simulado do histórico?")) return;
+      const h = loadHistory();
+      h.splice(Number(b.dataset.del), 1);
+      saveHistory(h);
+      renderHistory();
+    } else if (b.id === "btnLimparHist") {
+      if (!confirm("Apagar todo o histórico de simulados?")) return;
+      saveHistory([]);
+      renderHistory();
+    }
+  });
 
   $("btnReview").addEventListener("click", () => {
     const b = $("reviewBox");
