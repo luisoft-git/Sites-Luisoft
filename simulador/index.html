@@ -50,6 +50,13 @@
   .timer.low { color:var(--bad); }
   .mini { width:auto; margin:6px 0 0; padding:6px 12px; font-size:13px; background:transparent; color:var(--bad); border:1px solid var(--bad); }
   .mini.all { width:100%; margin-top:12px; }
+  .rank-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); font-size:14px; }
+  .rank-item:last-child { border-bottom:none; }
+  .rank-item img, .ph { width:40px; height:40px; flex:0 0 40px; border-radius:50%; object-fit:cover; background:#0e2238; display:inline-flex; align-items:center; justify-content:center; font-weight:700; color:var(--gold); }
+  .rank-item .pos { min-width:30px; color:var(--mut); }
+  .rank-item .rn { flex:1; }
+  .rank-item .rn small { color:var(--mut); }
+  .rank-item .rv { font-weight:700; color:var(--gold); }
   .history-item { font-size:14px; padding:8px 0; border-bottom:1px solid var(--line); }
   footer { text-align:center; color:var(--mut); font-size:12px; padding:20px 0; }
 </style>
@@ -66,6 +73,9 @@
   <div class="card">
     <label for="candName">Nome do candidato</label>
     <input type="text" id="candName" placeholder="Escreva o seu nome completo" maxlength="80" autocomplete="name">
+    <label for="candFoto" style="margin-top:12px">Foto do candidato (opcional)</label>
+    <input type="file" id="candFoto" accept="image/*" style="color:var(--mut);font-size:14px">
+    <img id="fotoPrev" alt="" style="display:none;width:80px;height:80px;border-radius:50%;object-fit:cover;margin-top:10px">
     <p id="startMsg" class="warn"></p>
     <p style="color:var(--mut);font-size:13px;margin:8px 0 0">Cada simulado tem 50 perguntas: Ministério do Interior 15 · Administração Pública 15 · História de Angola 12 · Organização Política 5 · Patriotismo 3. Cada pergunta tem 1 minuto.</p>
     <button id="btnStart">Iniciar simulado (50 perguntas)</button>
@@ -73,6 +83,10 @@
   <div class="card">
     <label>Histórico de simulados</label>
     <div id="history"></div>
+  </div>
+  <div class="card">
+    <label>Melhores notas (neste aparelho)</label>
+    <div id="ranking"></div>
   </div>
 </section>
 
@@ -93,6 +107,7 @@
 <section id="screen-result" class="screen">
   <div class="card" style="text-align:center">
     <div>Candidato</div>
+    <img id="rFoto" alt="" style="display:none;width:90px;height:90px;border-radius:50%;object-fit:cover;margin:8px auto 0">
     <h2 id="rName" style="margin:4px 0 0"></h2>
     <div class="big" id="rNota"></div>
     <div style="color:var(--mut)">nota do simulado (escala de 0 a 20)</div>
@@ -120,7 +135,7 @@
   <div class="card" id="reviewBox" style="display:none"></div>
 </section>
 
-<footer>Luisoft Simulador · v1.4<br>Criado por Luisoft Solutions · Desenvolvedor: Luís Manuel Gabriel</footer>
+<footer>Luisoft Simulador · v1.5<br>Criado por Luisoft Solutions · Desenvolvedor: Luís Manuel Gabriel</footer>
 
 <script src="questions.js"></script>
 <script src="questions-b.js"></script>
@@ -140,6 +155,7 @@
   const KEY = "luisoft_historico_v1";
   const APP_URL = "https://luisoft-git.github.io/Sites-Luisoft/simulador/";
   let ultimo = null; // último resultado, para partilha
+  let fotoAtual = ""; // foto do candidato (redimensionada, em data URL)
   const TEMPO = 60; // segundos por pergunta
 
   let timerId = null;
@@ -210,16 +226,51 @@
   function renderHistory() {
     const h = loadHistory();
     const box = $("history");
-    if (!h.length) { box.innerHTML = '<p style="color:var(--mut);font-size:14px">Ainda não há simulados.</p>'; return; }
+    if (!h.length) { box.innerHTML = '<p style="color:var(--mut);font-size:14px">Ainda não há simulados.</p>'; renderRanking(); return; }
     box.innerHTML = h.map((r, i) => ({ r, i })).reverse().map(({ r, i }) =>
       `<div class="history-item"><b>${escapeHtml(r.nome)}</b> — nota ${r.nota != null ? String(r.nota).replace(".", ",") + "/20" : ""} · ${r.pct}% (${r.ok}/${r.total}) · ${r.data}<br>
         <button class="mini" data-del="${i}">Eliminar</button></div>`
     ).join("") + `<button class="mini all" id="btnLimparHist">Apagar todo o histórico</button>`;
+    renderRanking();
+  }
+
+  function renderRanking() {
+    const lista = loadHistory().slice().sort((a, b) => (b.nota || 0) - (a.nota || 0) || (b.pct || 0) - (a.pct || 0));
+    const box = $("ranking");
+    if (!lista.length) { box.innerHTML = '<p style="color:var(--mut);font-size:14px">Ainda não há notas.</p>'; return; }
+    box.innerHTML = lista.slice(0, 10).map((r, i) =>
+      `<div class="rank-item"><span class="pos">${i + 1}º</span>` +
+      (r.foto ? `<img src="${r.foto}" alt="">` : `<span class="ph">${escapeHtml((r.nome || "?").charAt(0).toUpperCase())}</span>`) +
+      `<span class="rn"><b>${escapeHtml(r.nome)}</b><br><small>${escapeHtml(r.data || "")}</small></span>` +
+      `<span class="rv">${String(r.nota != null ? r.nota : 0).replace(".", ",")}/20</span></div>`
+    ).join("");
   }
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
+
+  // ----- Foto do candidato (redimensionada para 160 px, guardada em JPEG) -----
+  $("candFoto").addEventListener("change", e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) { fotoAtual = ""; $("fotoPrev").style.display = "none"; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+        const c = document.createElement("canvas");
+        c.width = 160; c.height = 160;
+        c.getContext("2d").drawImage(img, sx, sy, side, side, 0, 0, 160, 160);
+        fotoAtual = c.toDataURL("image/jpeg", 0.7);
+        $("fotoPrev").src = fotoAtual;
+        $("fotoPrev").style.display = "inline-block";
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(f);
+  });
 
   // Distribuição do simulado: dá mais peso aos tópicos de maior foco da prova.
   const QUOTA = {
@@ -257,7 +308,7 @@
       const order = shuffle(idx);
       return { q: q.q, t: q.t || "Geral", o: order.map(i => q.o[i]), a: order.indexOf(q.a), e: q.e || "" };
     });
-    sim = { nome, items: picked, i: 0, answers: [], startedAt: new Date() };
+    sim = { nome, foto: fotoAtual, items: picked, i: 0, answers: [], startedAt: new Date() };
     show("quiz");
     renderQuestion();
   });
@@ -312,12 +363,14 @@
     const data = new Date().toLocaleString("pt-PT");
 
     const h = loadHistory();
-    h.push({ nome: sim.nome, pct, nota, ok, total, data });
+    h.push({ nome: sim.nome, foto: sim.foto || "", pct, nota, ok, total, data });
     saveHistory(h);
     ultimo = { nome: sim.nome, nota, pct, ok, total, aprovado: pct >= PASS };
     $("shareMsg").textContent = "";
 
     $("rName").textContent = sim.nome;
+    if (sim.foto) { $("rFoto").src = sim.foto; $("rFoto").style.display = "block"; }
+    else { $("rFoto").style.display = "none"; }
     $("rNota").textContent = nota.toFixed(1).replace(".", ",") + " / 20";
     $("rPct").textContent = pct + "% de respostas certas";
     $("rOk").textContent = ok;
@@ -403,6 +456,9 @@
     pararTempo();
     sim = null;
     $("candName").value = "";
+    fotoAtual = "";
+    $("candFoto").value = "";
+    $("fotoPrev").style.display = "none";
     renderHistory();
     show("start");
   });
