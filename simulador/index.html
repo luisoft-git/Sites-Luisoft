@@ -65,6 +65,7 @@
     <label for="candName">Nome do candidato</label>
     <input type="text" id="candName" placeholder="Escreva o seu nome completo" maxlength="80" autocomplete="name">
     <p id="startMsg" class="warn"></p>
+    <p style="color:var(--mut);font-size:13px;margin:8px 0 0">Cada simulado tem 50 perguntas: Ministério do Interior 15 · Administração Pública 15 · História de Angola 12 · Organização Política 5 · Patriotismo 3. Cada pergunta tem 1 minuto.</p>
     <button id="btnStart">Iniciar simulado (50 perguntas)</button>
   </div>
   <div class="card">
@@ -111,7 +112,7 @@
   <div class="card" id="reviewBox" style="display:none"></div>
 </section>
 
-<footer>Luisoft Simulador · v1.2<br>Criado por Luisoft Solutions · Desenvolvedor: Luís Manuel Gabriel</footer>
+<footer>Luisoft Simulador · v1.3<br>Criado por Luisoft Solutions · Desenvolvedor: Luís Manuel Gabriel</footer>
 
 <script src="questions.js"></script>
 <script src="questions-b.js"></script>
@@ -120,6 +121,10 @@
 <script src="questions-e.js"></script>
 <script src="questions-f.js"></script>
 <script src="questions-g.js"></script>
+<script src="questions-h.js"></script>
+<script src="questions-i.js"></script>
+<script src="questions-j.js"></script>
+<script src="questions-k.js"></script>
 <script>
 (function () {
   const SIM_SIZE = 50;
@@ -205,6 +210,27 @@
     return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  // Distribuição do simulado: dá mais peso aos tópicos de maior foco da prova.
+  const QUOTA = {
+    "Ministério do Interior": 15,
+    "Administração Pública": 15,
+    "História de Angola": 12,
+    "Organização Política": 5,
+    "Patriotismo": 3
+  };
+  function escolherPerguntas() {
+    const escolhidas = [];
+    Object.keys(QUOTA).forEach(t => {
+      escolhidas.push(...shuffle(bank.filter(q => q.t === t)).slice(0, QUOTA[t]));
+    });
+    if (escolhidas.length < SIM_SIZE) {
+      // completa com outras perguntas se algum tópico tiver poucas
+      const usadas = new Set(escolhidas);
+      escolhidas.push(...shuffle(bank.filter(q => !usadas.has(q))).slice(0, SIM_SIZE - escolhidas.length));
+    }
+    return shuffle(escolhidas);
+  }
+
   $("btnStart").addEventListener("click", () => {
     const nome = $("candName").value.trim();
     const msg = $("startMsg");
@@ -214,7 +240,7 @@
       return;
     }
     msg.textContent = "";
-    const picked = shuffle(bank).slice(0, SIM_SIZE).map(q => {
+    const picked = escolherPerguntas().map(q => {
       // baralha as opções mantendo a resposta correta
       const idx = q.o.map((_, i) => i);
       const order = shuffle(idx);

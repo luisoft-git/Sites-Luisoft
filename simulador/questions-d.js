@@ -46,7 +46,6 @@
   { t: "História de Angola", q: "Quem é o autor do poema 'Monangambé' e antigo Presidente de Angola?", o: ["Agostinho Neto", "Viriato da Cruz", "Lúcio Lara", "Mário Pinto de Andrade"], a: 0, e: "Agostinho Neto é autor do poema Monangambé." },
   { t: "História de Angola", q: "Qual é a principal atividade económica tradicional do sul de Angola?", o: ["Pastorícia", "Pesca de bacalhau", "Produção de cacau", "Extração de ouro"], a: 0 },
   { t: "História de Angola", q: "Qual é o nome do rio que dá nome à moeda nacional?", o: ["Cuanza", "Cunene", "Zambeze", "Okavango"], a: 0 },
-  { t: "História de Angola", q: "Quantas províncias tem Angola?", o: ["15", "18", "21", "24"], a: 1 },
   { t: "História de Angola", q: "Qual é a província mais populosa de Angola?", o: ["Luanda", "Huíla", "Benguela", "Cabinda"], a: 0 },
   { t: "História de Angola", q: "Qual é a província de Angola onde se localiza o Parque Nacional da Quiçama?", o: ["Cuanza Norte", "Bengo", "Cuanza Sul", "Luanda"], a: 2 },
   { t: "História de Angola", q: "Quem foi o fundador da cidade de Benguela?", o: ["Manuel Cerveira Pereira", "Paulo Dias de Novais", "Diogo Cão", "Bartolomeu Dias"], a: 0 },
